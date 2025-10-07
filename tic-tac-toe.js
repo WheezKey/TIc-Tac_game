@@ -2,11 +2,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const board = document.getElementById("board");
   const cells = document.querySelectorAll(".cell");
   const statusDisplay = document.getElementById("status");
-  const restartButton = document.getElementById("restart");
+  const restartButton = document.getElementById("restart-btn");
 
   let gameActive = true;
   let currentPlayer = "X";
   let gameState = ["", "", "", "", "", "", "", "", ""];
+
   const winningConditions = [
     [0, 1, 2],
     [3, 4, 5],
@@ -19,12 +20,70 @@ document.addEventListener("DOMContentLoaded", () => {
   ];
 
   const statusMessages = {
-    playerTurn: () => `Your Turn ${currentPlayer}`,
-    aiTurn: () => `AI is thinking...`,
-    playerWin: () => `You win!`,
-    aiWin: () => `AI wins!`,
-    draw: () => `Game ended in a draw!`,
+    playerTurn: () => `PLAYER ${currentPlayer} TURN`,
+    aiTurn: () => `CPU THINKING...`,
+    playerWin: () => `PLAYER WINS!`,
+    aiWin: () => `CPU WINS!`,
+    draw: () => `GAME OVER - DRAW!`,
   };
+
+  // Add retro sound effects
+  const sounds = {
+    click: new Audio(),
+    win: new Audio(),
+    lose: new Audio(),
+    draw: new Audio(),
+  };
+
+  // Simulate retro sounds with oscillator
+  function playRetroSound(type) {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      switch (type) {
+        case "click":
+          oscillator.type = "square";
+          oscillator.frequency.setValueAtTime(220, audioCtx.currentTime);
+          gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          oscillator.start();
+          oscillator.stop(audioCtx.currentTime + 0.1);
+          break;
+        case "win":
+          oscillator.type = "square";
+          oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+          gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          oscillator.start();
+          oscillator.frequency.setValueAtTime(660, audioCtx.currentTime + 0.1);
+          oscillator.frequency.setValueAtTime(880, audioCtx.currentTime + 0.2);
+          oscillator.stop(audioCtx.currentTime + 0.3);
+          break;
+        case "lose":
+          oscillator.type = "square";
+          oscillator.frequency.setValueAtTime(330, audioCtx.currentTime);
+          gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          oscillator.start();
+          oscillator.frequency.setValueAtTime(220, audioCtx.currentTime + 0.1);
+          oscillator.frequency.setValueAtTime(110, audioCtx.currentTime + 0.2);
+          oscillator.stop(audioCtx.currentTime + 0.3);
+          break;
+        case "draw":
+          oscillator.type = "square";
+          oscillator.frequency.setValueAtTime(330, audioCtx.currentTime);
+          gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          oscillator.start();
+          oscillator.frequency.setValueAtTime(330, audioCtx.currentTime + 0.2);
+          oscillator.stop(audioCtx.currentTime + 0.3);
+          break;
+      }
+    } catch (e) {
+      console.log("Audio not supported");
+    }
+  }
 
   function handleCellClick(clickedCellEvent) {
     const clickedCell = clickedCellEvent.target;
@@ -34,58 +93,63 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Player Move
+    // Player's move
     gameState[clickedCellIndex] = currentPlayer;
     clickedCell.textContent = currentPlayer;
     clickedCell.classList.add("x");
+    playRetroSound("click");
 
-    // Check for win or draw
+    // Check if player won or if it's a draw
     if (checkWin()) {
       highlightWinningCells();
       statusDisplay.textContent = statusMessages.playerWin();
       gameActive = false;
+      playRetroSound("win");
       return;
     }
 
     if (checkDraw()) {
       statusDisplay.textContent = statusMessages.draw();
       gameActive = false;
+      playRetroSound("draw");
       return;
     }
 
-    // Switch to AI turn
+    // AI's turn
     currentPlayer = "O";
     statusDisplay.textContent = statusMessages.aiTurn();
 
-    // Delay AI move for better UX
+    // Delay AI move to make it feel more natural
     setTimeout(() => {
       makeAiMove();
 
-      // Check for win or draw after AI move
+      // Check if AI won or if it's a draw
       if (checkWin()) {
         highlightWinningCells();
         statusDisplay.textContent = statusMessages.aiWin();
         gameActive = false;
+        playRetroSound("lose");
         return;
       }
 
       if (checkDraw()) {
         statusDisplay.textContent = statusMessages.draw();
         gameActive = false;
+        playRetroSound("draw");
         return;
       }
 
-      // Back to Player turn
+      // Back to player's turn
       currentPlayer = "X";
       statusDisplay.textContent = statusMessages.playerTurn();
     }, 600);
   }
 
   function makeAiMove() {
-    // Simple AI: choose a random empty cell
+    // Simple AI: First try to win, then block player, then take center, then random move
 
     // Try to win
-    for (let i = 0; i < winningConditions.length; i++) {
+    for (let i = 0; i < gameState.length; i++) {
       if (gameState[i] === "") {
         gameState[i] = "O";
         if (checkWin()) {
@@ -96,8 +160,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // Block player from winning
-    for (let i = 0; i < winningConditions.length; i++) {
+    // Try to block player
+    for (let i = 0; i < gameState.length; i++) {
       if (gameState[i] === "") {
         gameState[i] = "X";
         if (checkWin()) {
@@ -109,14 +173,14 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // Take Center
+    // Take center if available
     if (gameState[4] === "") {
       gameState[4] = "O";
       updateCell(4, "O");
       return;
     }
 
-    // Take a Random Cell
+    // Take a random available cell
     const availableCells = gameState
       .map((cell, index) => (cell === "" ? index : null))
       .filter((cell) => cell !== null);
@@ -173,6 +237,7 @@ document.addEventListener("DOMContentLoaded", () => {
     currentPlayer = "X";
     gameState = ["", "", "", "", "", "", "", "", ""];
     statusDisplay.textContent = statusMessages.playerTurn();
+    playRetroSound("click");
 
     cells.forEach((cell) => {
       cell.textContent = "";
@@ -180,10 +245,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Event Listeners
+  // Event listeners
   cells.forEach((cell) => cell.addEventListener("click", handleCellClick));
   restartButton.addEventListener("click", restartGame);
 
-  // Initialize game status
+  // Initialize game
   statusDisplay.textContent = statusMessages.playerTurn();
 });
