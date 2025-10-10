@@ -6,17 +6,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let gameActive = true;
   let currentPlayer = "X";
-  let gameState = ["", "", "", "", "", "", "", "", ""];
+  let gameState = [
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+  ];
 
   const winningConditions = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8], // rows
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8], // columns
-    [0, 4, 8],
-    [2, 4, 6], // diagonals
+    [0, 1, 2, 3],
+    [4, 5, 6, 7],
+    [8, 9, 10, 11],
+    [12, 13, 14, 15], // rows
+    [0, 4, 8, 12],
+    [1, 5, 9, 13],
+    [2, 6, 10, 14],
+    [3, 7, 11, 15], // columns
+    [0, 5, 10, 15],
+    [3, 6, 9, 12], // diagonals
   ];
 
   const statusMessages = {
@@ -200,11 +219,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function checkWin() {
     for (let i = 0; i < winningConditions.length; i++) {
-      const [a, b, c] = winningConditions[i];
+      const [a, b, c, d] = winningConditions[i];
       if (
         gameState[a] &&
         gameState[a] === gameState[b] &&
-        gameState[a] === gameState[c]
+        gameState[a] === gameState[c] &&
+        gameState[a] === gameState[d]
       ) {
         return true;
       }
@@ -214,15 +234,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function highlightWinningCells() {
     for (let i = 0; i < winningConditions.length; i++) {
-      const [a, b, c] = winningConditions[i];
+      const [a, b, c, d] = winningConditions[i];
       if (
         gameState[a] &&
         gameState[a] === gameState[b] &&
-        gameState[a] === gameState[c]
+        gameState[a] === gameState[c] &&
+        gameState[a] === gameState[d]
       ) {
         cells[a].classList.add("winning");
         cells[b].classList.add("winning");
         cells[c].classList.add("winning");
+        cells[d].classList.add("winning");
         return;
       }
     }
@@ -235,7 +257,24 @@ document.addEventListener("DOMContentLoaded", () => {
   function restartGame() {
     gameActive = true;
     currentPlayer = "X";
-    gameState = ["", "", "", "", "", "", "", "", ""];
+    gameState = [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ];
     statusDisplay.textContent = statusMessages.playerTurn();
     playRetroSound("click");
 
